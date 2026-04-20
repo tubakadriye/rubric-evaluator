@@ -1,0 +1,9 @@
+import os
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+MODEL_GRADING = "gpt-4.1"
+MODEL_EXTRACTION = "gpt-4.1-mini"
+
+TEMPERATURE_GRADING = 0.0 #deterministic
+TEMPERATURE_GENERATION = 0.4
