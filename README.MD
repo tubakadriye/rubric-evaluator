@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project builds an automated pipeline to **evaluate and improve grading rubrics** using LLMs.
+This project builds an automated system to **evaluate and improve grading rubrics** using LLMs and statistical metrics.
 
 The system analyzes how well a rubric performs across three key goals:
 
@@ -11,6 +11,15 @@ The system analyzes how well a rubric performs across three key goals:
 3. **Discrimination** → Does the rubric clearly separate strong and weak answers?
 
 ---
+## Key Idea
+
+The system follows a closed-loop evaluation process:
+
+1. Simulate grading using LLMs (multiple runs, multiple models)
+2. Measure statistical properties of grading behavior
+3. Detect rubric weaknesses
+4. Automatically generate an improved rubric
+
 
 ## Architecture
 
@@ -24,23 +33,24 @@ The system analyzes how well a rubric performs across three key goals:
           ┌───────────────┼────────────────┐
           │               │                │
           ▼               ▼                ▼
-  Rubric Extractor   Student Answer Extractor   Teaching Extractor
+  Rubric Extractor   Student Answer   Teaching Extractor
+                     Extractor   
           │               │                │
           └───────────────┴────────────────┘
                           │
                           ▼
-                 Grading Simulation (LLM)
+          LLM Grading Simulation (Async, Multi-model)
                           │
                           ▼
                  Multi-run Evaluation
                           │
                           ▼
-        ┌──────────────────────────────────┐
-        │ Metrics Computation              │
-        │ - Ambiguity                     │
-        │ - Discrimination                │
-        │ - Applicability                 │
-        └──────────────────────────────────┘
+            ┌──────────────────────────────────┐
+            │ Metrics Computation              │
+            │ - Ambiguity (ICC)                │
+            │ - Discrimination (Spearman)      │
+            │ - Applicability (Edge Stability) │
+            └──────────────────────────────────┘
                           │
                           ▼
                  Failure Detection
@@ -58,64 +68,128 @@ The system analyzes how well a rubric performs across three key goals:
 
 ### 1. Data Extraction
 
-* Rubric extracted from PDF using PyMuPDF
-* Student answers extracted via OCR / vision model
-* Teaching material structured using multimodal LLM
+- **Rubric** → extracted from PDF (PyMuPDF)
+- **Student answers** → transcribed using multimodal LLM
+- **Teaching material** → structured extraction via LLM
 
 ---
 
 ### 2. Grading Simulation
 
-* LLM grades answers using the rubric
-* Multiple runs simulate different graders
+- Answers are graded using LLMs under the rubric
+- Multiple runs simulate **independent graders**
+- Multiple models (OpenAI + Claude) simulate **model disagreement**
+
+This produces:
+- repeated grading distributions
+- cross-model differences
+
+
+### 3. Synthetic Dataset 
+
+To robustly evaluate the rubric, synthetic answers are generated:
+
+- **Good answers** → correct, complete
+- **Bad answers** → incorrect or missing key concepts
+- **Edge cases** → partially correct / ambiguous
+
+This enables controlled evaluation of:
+- ranking behavior (discrimination)
+- robustness (applicability)
+
+
+### 4. Evaluation Metrics
+
+#### 4.1 Ambiguity → Intraclass Correlation (ICC)
+
+Measures **inter-rater reliability** across grading runs.
+
+- Input: repeated grades per student
+- High ICC → strong agreement → low ambiguity
+- Low ICC → rubric interpretation is inconsistent
 
 ---
 
-### 3. Evaluation Metrics
+#### 4.2 Discrimination → Spearman Correlation
 
-#### Ambiguity
-
-Measures grading consistency across runs
-→ Based on **criterion-level disagreement**
-
-#### Discrimination
-
-Measures ranking quality:
+Measures whether ranking is preserved:
 
 ```
-good answers > edge cases > bad answers
+good > edge > bad 
 ```
 
-#### Applicability
-
-Measures:
-
-* coverage of rubric criteria
-* handling of edge cases
+- Input: scores + ordinal labels
+- High correlation → rubric separates quality levels correctly
 
 ---
 
-### 4. Synthetic Dataset (Optional but Recommended)
+#### 4.3 Applicability → Edge Stability
 
-Synthetic answers are generated to:
+Measures how the rubric behaves on ambiguous answers.
 
-* create controlled **good / bad / edge cases**
-* evaluate discrimination and applicability
+- Input: scores of edge-case answers
+- High variance → rubric unstable / underspecified
+- Very low variance → rubric overly rigid
 
-Optional human validation can be added to:
+The score is normalized relative to overall grading variability.
 
-* define expected score ranges
-* improve reliability
+---
+
+#### 4.4 Consistency
+
+Measures variability across repeated grading runs.
+
+- Based on standard deviation of scores
+- Complements ICC (distribution-level vs agreement-level)
+
+---
+
+#### 4.5 Cross-model Consistency
+
+Measures agreement between different LLMs (e.g. OpenAI vs Claude).
+
+- Captures **model-dependent ambiguity**
+- Important for robustness across evaluators
 
 ---
 
 ### 5. Rubric Improvement
 
-The system:
+The system combines:
 
-* analyzes rubric weaknesses
-* detects failures
-* proposes an improved rubric using LLM reasoning
+- statistical signals (metrics)
+- rubric analysis
+- grading outputs
+
+to generate an improved rubric that:
+
+- reduces ambiguity
+- improves coverage
+- strengthens discrimination
+
+---
+
+### 6. Human Review
+
+A human expert:
+
+- validates the improved rubric
+- optionally edits it
+- ensures domain correctness
+
+---
+
+## Why Async Execution?
+
+Grading requires many independent LLM calls.
+
+Using async execution:
+
+- parallelizes API requests
+- significantly reduces runtime
+- scales with number of students and runs
+
+This is more efficient than thread-based parallelism for I/O-bound workloads.
 
 ---
 
@@ -126,10 +200,11 @@ brew install poppler
 pip install -r requirements.txt
 ```
 
-Set API key:
+Set API keys:
 
 ```bash
 export OPENAI_API_KEY=your_key_here
+export ANTHROPIC_API_KEY=your_key
 ```
 
 ---
@@ -138,9 +213,9 @@ export OPENAI_API_KEY=your_key_here
 
 ```bash
 python -m app.main \
-  --rubric data/rubric.pdf \
-  --teaching data/teaching.pdf \
-  --students data/s1.pdf data/s2.pdf
+  --rubric data/ExamQuestionAndRubric.pdf \
+  --teaching data/TeachingResource-BAD_ACTORS_STRATEGY.pdf \
+  --students data/StudentAnswer-Student1.pdf data/StudentAnswer-Student2.pdf data/StudentAnswer-Student3.pdf
 ```
 
 ---
@@ -157,9 +232,20 @@ python -m app.main \
 
 ```json
 {
-  "evaluation": {...},
+  "evaluation": {
+    "scores": {
+      "ambiguity": 82.3,
+      "discrimination": 75.1,
+      "applicability": 68.4
+    },
+    "failures": [...]
+  },
   "improved_rubric": "...",
-  "explanation": {...}
+  "explanation": {
+    "ambiguity": "...",
+    "applicability": "...",
+    "discrimination": "..."
+  }
 }
 ```
 
@@ -179,11 +265,4 @@ we can **systematically improve rubric quality**.
 
 ---
 
-## Future Improvements
 
-* Human-in-the-loop calibration scoring
-* Multi-model grading comparison
-* Dataset expansion with real student answers
-* Benchmarking across different rubric styles
-
----

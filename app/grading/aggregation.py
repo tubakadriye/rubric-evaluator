@@ -14,3 +14,9 @@ def aggregate(grading_runs):
         })
 
     return result
+
+def summarize_runs(aggregated):
+    return [
+        f"Student {i+1}: mean={a['mean']:.1f}, std={a['std']:.1f}"
+        for i, a in enumerate(aggregated)
+    ]

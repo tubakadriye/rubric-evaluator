@@ -1,5 +1,7 @@
-from app.llm import call_llm_text
-from app.utils import extract_json
+
+from app.config import MODEL_ANALYSIS
+from app.llm.client import call_llm
+from app.utils.json_utils import extract_json
 
 def generate_synthetic_answers(teaching, rubric):
     """
@@ -33,4 +35,4 @@ Return STRICT JSON:
 }}
 """
 
-    return extract_json(call_llm_text(prompt))
+    return extract_json(call_llm(prompt, MODEL_ANALYSIS, 0.4))

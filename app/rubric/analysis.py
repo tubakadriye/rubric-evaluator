@@ -1,5 +1,6 @@
+from app.config import MODEL_ANALYSIS
 from app.llm.client import call_llm
-from app.utils import extract_json
+from app.utils.json_utils import extract_json
 
 def analyze_rubric(rubric, teaching_material):
     prompt = f"""
@@ -34,5 +35,5 @@ Return STRICT JSON:
   "alignment_issues": ["..."]
 }}
 """
-    output = call_llm(prompt)
+    output = call_llm(prompt, model= MODEL_ANALYSIS, temperature=0.4)
     return extract_json(output)

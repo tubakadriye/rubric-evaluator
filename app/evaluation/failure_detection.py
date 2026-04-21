@@ -1,37 +1,36 @@
 from app.evaluation.metrics import (
-    ambiguity_score,
-    discrimination_score,
+    ambiguity_score_icc,
+    discrimination_score_spearman,
     applicability_score
 )
 
 
 def detect_rubric_failures(grading_runs, good_scores, edge_scores, bad_scores):
 
-    ambiguity = ambiguity_score(grading_runs)
-    discrimination = discrimination_score(good_scores, edge_scores, bad_scores)
-    applicability = applicability_score(grading_runs, edge_scores)
+    ambiguity = ambiguity_score_icc(grading_runs)
+    discrimination = discrimination_score_spearman(good_scores, edge_scores, bad_scores)
+    applicability = applicability_score(edge_scores, grading_runs)
 
     failures = []
 
-    if ambiguity < 80:
+    if ambiguity < 70:
         failures.append({
             "type": "ambiguity",
-            "message": "Grading is inconsistent across runs.",
+            "message": "Low inter-rater agreement (ICC).",
             "score": ambiguity
         })
 
-    if discrimination < 70:
+    if discrimination < 60:
         failures.append({
             "type": "discrimination",
-            "message": "Rubric fails to reliably rank good > edge > bad.",
+            "message": "Ranking between good, edge, bad is weak.",
             "score": discrimination
         })
 
-
-    if applicability < 70:
+    if applicability < 50:
         failures.append({
             "type": "applicability",
-            "message": "Rubric does not handle full diversity of answer types.",
+            "message": "Rubric does not generalize well to edge cases.",
             "score": applicability
         })
 

@@ -1,0 +1,101 @@
+{
+  "improved_rubric": {
+    "criteria": [
+      {
+        "name": "Category Appropriateness",
+        "max_score": 0.5,
+        "levels": [
+          {
+            "score": 0.5,
+            "description": "Action clearly matches the motivation category selected (based on provided definitions and examples). Overlaps are acceptable if justified by the student."
+          },
+          {
+            "score": 0.25,
+            "description": "Action partially matches the motivation category, but justification is weak or not fully aligned; overlaps are not acknowledged."
+          },
+          {
+            "score": 0,
+            "description": "Action does not correspond to the selected category or is unrelated."
+          }
+        ]
+      },
+      {
+        "name": "Scenario Specificity and Impact",
+        "max_score": 0.5,
+        "levels": [
+          {
+            "score": 0.5,
+            "description": "Description clearly explains how the action is harmful, specifies the negative impact on stakeholders, and is directly tied to the SmartCity scenario."
+          },
+          {
+            "score": 0.25,
+            "description": "Description mentions harm or negative impact, but lacks specificity, detail, or clear connection to the scenario."
+          },
+          {
+            "score": 0,
+            "description": "No clear negative impact described, or impact is generic and not tied to the scenario."
+          }
+        ]
+      },
+      {
+        "name": "Distinctiveness of Actions",
+        "max_score": 0.5,
+        "levels": [
+          {
+            "score": 0.5,
+            "description": "All three actions are clearly distinct in both method and motivation (not just superficial differences); each represents a unique threat scenario."
+          },
+          {
+            "score": 0.25,
+            "description": "Two actions are somewhat similar in either method or motivation, but still distinguishable."
+          },
+          {
+            "score": 0,
+            "description": "Two or more actions are essentially the same in both method and motivation."
+          }
+        ],
+        "note": "This is scored once for the whole response (not per action)."
+      },
+      {
+        "name": "Depth and Insight",
+        "max_score": 0.5,
+        "levels": [
+          {
+            "score": 0.5,
+            "description": "Answers demonstrate deep understanding by referencing assessment questions (e.g., 'Who would exploit the system?', 'What are the consequences?'), addressing ambiguity/overlap in categories, or connecting to software design and mitigation."
+          },
+          {
+            "score": 0.25,
+            "description": "Some evidence of deeper thinking (e.g., mentions of possible mitigations, or notes on ambiguity), but lacks full development."
+          },
+          {
+            "score": 0,
+            "description": "No evidence of deeper analysis; answers are purely surface-level."
+          }
+        ],
+        "note": "This is scored once for the whole response (not per action)."
+      }
+    ],
+    "scoring_instructions": [
+      "For each of the three actions: score Category Appropriateness and Scenario Specificity/Impact (max 1 point per action).",
+      "For the whole response: score Distinctiveness of Actions and Depth/Insight (max 0.5 each).",
+      "Total possible: 3 (actions) + 0.5 (distinctiveness) + 0.5 (depth/insight) = 4 points.",
+      "Scale final score to 3 points (multiply by 0.75) for direct comparability with previous rubric if needed.",
+      "Partial credit is allowed at each level as described."
+    ],
+    "clarifications": [
+      "If a student's action plausibly fits more than one category, award full credit if the student provides a reasonable justification.",
+      "If a student provides more than three actions, grade the best three.",
+      "If a student fails to provide three actions, score only what is present and note missing elements."
+    ],
+    "examples": [
+      "Strong answer: Clearly matches categories, describes specific scenario-based harm, actions are distinct, and references ambiguity or mitigation.",
+      "Weak answer: Vague or generic actions, unclear categories, minimal scenario linkage, actions overlap, no deeper analysis."
+    ]
+  },
+  "explanation": {
+    "ambiguity": "Ambiguity is reduced by providing clear, operationalized levels for each criterion (with examples and definitions), explicit handling of overlaps, and structured partial credit. All graders can apply the same standards, minimizing subjective interpretation.",
+    "applicability": "Applicability is increased by allowing for overlapping categories (with justification), partial answers, and a wider range of plausible action types. The rubric addresses both surface-level and deeper, more analytical responses, ensuring no valid answer type is left out.",
+    "discrimination": "Discrimination is improved by adding depth/insight and distinctiveness criteria, allowing high-quality, scenario-specific, and thoughtful answers to score higher than minimal or generic ones. Partial credit at each level further differentiates between weak, adequate, and strong responses."
+  }
+}

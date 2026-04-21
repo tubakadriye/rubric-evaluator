@@ -1,20 +1,22 @@
 import re
 
+
 def parse_rubric(rubric_text):
     """
-    Deterministic parsing of rubric into structured format.
+    Extract criteria with flexible patterns:
+    supports: points, marks, score, pts
     """
+
+    pattern = r"(.*?)(\d+)\s*(points?|marks?|score|pts?)"
+    matches = re.findall(pattern, rubric_text, re.IGNORECASE)
 
     criteria = []
 
-    pattern = r"(.*?)(\d+)\s*points?"
-    matches = re.findall(pattern, rubric_text, re.IGNORECASE)
-
-    for m in matches:
+    for text, score, _ in matches:
         criteria.append({
-            "name": m[0].strip(),
-            "max_score": int(m[1]),
-            "description": m[0].strip()
+            "name": text.strip(),
+            "max_score": int(score),
+            "description": text.strip()
         })
 
     return {"criteria": criteria}

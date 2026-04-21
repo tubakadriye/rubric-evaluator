@@ -1,25 +1,57 @@
-from app.llm.client import call_llm
-from app.utils.json_utils import extract_json
-from app.config import MODEL_GRADING, TEMPERATURE_GRADING
+from app.llm import call_llm
 
 
-def grade_answer(rubric, answer):
-
+def grade_student_answer(rubric, answer):
     prompt = f"""
-You are a strict grader.
+You are a strict and consistent grader.
+
+IMPORTANT:
+- Output MUST be valid JSON
+- You MUST use ONLY the rubric below
+- Do NOT introduce external knowledge
+- If the rubric is unclear, explicitly say so
 
 RUBRIC:
 {rubric}
 
-ANSWER:
+STUDENT ANSWER:
 {answer}
 
-Return JSON:
+TASK:
+1. Extract ALL criteria from the rubric
+2. Evaluate each criterion separately
+3. Assign score strictly within defined max score
+4. If a criterion is unclear → mark it as "ambiguous" -> is_ambiguous = true
+
+
+Return STRICT JSON:
+
 {{
-  "criteria_scores": [],
-  "final_grade": number
+  "criteria_scores": [
+    {{
+      "criterion": "string",
+      "max_score": number,
+      "score": number,
+      "reason": "string",
+      "is_ambiguous": true
+    }}
+  ],
+  "final_grade": number,
+  "overall_reason": "string"
 }}
 """
 
-    output = call_llm(prompt, MODEL_GRADING, TEMPERATURE_GRADING)
-    return extract_json(output)
+    output = call_llm_text(prompt)
+    try:
+        return extract_json(output)
+    except Exception as e:
+        return {
+            "criteria_scores": [],
+            "final_grade": 0,
+            "overall_reason": "Parsing failed",
+            "error": str(e),
+            "raw_output": output
+        }
+
+
+
