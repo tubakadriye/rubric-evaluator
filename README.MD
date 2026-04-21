@@ -261,8 +261,9 @@ we can systematically improve rubric quality.
 
 ## Future Work
 
-- Incorporate human-reviewed and labeled student answers to create a gold-standard evaluation set
-- Extend evaluation beyond synthetic data to real-world exam responses
-- Improve metric calibration using annotated datasets
-
+- Incorporate human-reviewed and labeled student answers to create a gold-standard evaluation set  
+- Extend evaluation beyond synthetic data to real-world exam responses  
+- Improve metric calibration using annotated datasets  
+- Explore Retrieval-Augmented Generation (RAG) to improve contextual grounding when processing large teaching materials and rubrics  
+- Investigate Graph RAG approaches to better model relationships between rubric criteria, student answers, and teaching content for more structured retrieval and reasoning  
 
