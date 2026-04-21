@@ -84,6 +84,7 @@ This produces:
 - repeated grading distributions
 - cross-model differences
 
+---
 
 ### 3. Synthetic Dataset 
 
@@ -97,6 +98,7 @@ This enables controlled evaluation of:
 - ranking behavior (discrimination)
 - robustness (applicability)
 
+---
 
 ### 4. Evaluation Metrics
 
@@ -171,11 +173,8 @@ to generate an improved rubric that:
 
 ### 6. Human Review
 
-A human expert:
-
-- validates the improved rubric
-- optionally edits it
-- ensures domain correctness
+A human expert reviews the generated rubric via a simple CLI prompt  
+(approve or edit before final output).
 
 ---
 
@@ -195,7 +194,17 @@ export ANTHROPIC_API_KEY=your_key
 
 ---
 
-## Run the Application
+## Input Data
+
+Place your input files in a data/ folder:
+
+- Rubric PDF
+- Teaching material PDF
+- Student answer PDFs
+
+The `data/` folder is excluded from version control via `.gitignore`.
+
+### Run the Application
 
 ```bash
 python -m app.main \
@@ -206,7 +215,7 @@ python -m app.main \
 
 ---
 
-## Example Inputs
+### Example Inputs
 
 * `data/ExamQuestionAndRubric.pdf`
 * `data/StudentAnswer-Student1.pdf`
@@ -227,6 +236,13 @@ python -m app.main \
 }
 ```
 
+The result is also saved to:
+
+```bash
+output.json
+```
+
+
 ---
 
 ## Key Insight
@@ -239,8 +255,14 @@ By combining:
 * controlled data (synthetic answers)
 * evaluation metrics
 
-we can **systematically improve rubric quality**.
+we can systematically improve rubric quality.
 
 ---
+
+## Future Work
+
+- Incorporate human-reviewed and labeled student answers to create a gold-standard evaluation set
+- Extend evaluation beyond synthetic data to real-world exam responses
+- Improve metric calibration using annotated datasets
 
 
