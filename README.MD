@@ -179,20 +179,6 @@ A human expert:
 
 ---
 
-## Why Async Execution?
-
-Grading requires many independent LLM calls.
-
-Using async execution:
-
-- parallelizes API requests
-- significantly reduces runtime
-- scales with number of students and runs
-
-This is more efficient than thread-based parallelism for I/O-bound workloads.
-
----
-
 ## Installation
 
 ```bash
@@ -232,15 +218,7 @@ python -m app.main \
 
 ```json
 {
-  "evaluation": {
-    "scores": {
-      "ambiguity": 82.3,
-      "discrimination": 75.1,
-      "applicability": 68.4
-    },
-    "failures": [...]
-  },
-  "improved_rubric": "...",
+  "improved_rubric": {},
   "explanation": {
     "ambiguity": "...",
     "applicability": "...",

@@ -39,10 +39,17 @@ data/
 *.png
 *.jpg
 *.jpeg
-*.json
 
 # =========================
 # OS files
 # =========================
 .DS_Store
 Thumbs.db
+
+# outputs
+notebooks/outputs/
+results/
+output.json
+student_transcriptions.json
+notebooks/outputs/
+*.log
