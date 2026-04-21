@@ -50,6 +50,7 @@ Thumbs.db
 notebooks/outputs/
 results/
 output.json
+notebooks/student_transcriptions.json
 student_transcriptions.json
 notebooks/outputs/
 *.log
