@@ -9,8 +9,14 @@ import pingouin as pg
 # ----------------------------
 def ambiguity_score_icc(grading_runs):
     """
-    Measures inter-rater reliability using Intraclass Correlation (ICC).
-    High ICC → graders agree → low ambiguity.
+    Measures inter-rater reliability using ICC.
+    High ICC → low ambiguity.
+
+    Uses:
+    - ICC(A,1) → agreement between individual raters (preferred)
+    - fallback: ICC(A,k)
+
+    Returns score in [0,100]
     """
 
     data = []
@@ -25,8 +31,9 @@ def ambiguity_score_icc(grading_runs):
 
     df = pd.DataFrame(data)
 
+    # Edge case: no variance → perfect agreement
     if df["score"].nunique() <= 1:
-        return 100.0  # perfect agreement edge case
+        return 100.0
 
     icc = pg.intraclass_corr(
         data=df,
@@ -35,12 +42,20 @@ def ambiguity_score_icc(grading_runs):
         ratings="score"
     )
 
-    value = icc[icc["Type"] == "ICC2"]["ICC"].values
 
-    if len(value) == 0:
+    row = icc[icc["Type"].isin(["ICC(A,1)", "ICC(A,k)"])]
+
+    if row.empty:
         return 0.0
 
-    return float(np.clip(value[0], 0, 1) * 100)
+    value = row["ICC"].iloc[0]
+
+    # Clamp to valid ICC range
+    value = max(-1.0, min(1.0, float(value)))
+
+    # Map [-1,1] → [0,100]
+    score = (value + 1) / 2 * 100
+    return score
 
 
 # ----------------------------
