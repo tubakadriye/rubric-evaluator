@@ -85,7 +85,8 @@ def discrimination_score_spearman(good, edge, bad):
         return 0.0
 
     # map [-1,1] → [0,100]
-    return float((corr + 1) / 2 * 100)
+    score = float((corr + 1) / 2 * 100)
+    return score
 
 
 # ----------------------------
@@ -112,8 +113,9 @@ def applicability_score(edge_scores, grading_runs):
     ]) + 1e-6
 
     stability = 1 - (std / overall_std)
+    score = float(np.clip(stability, 0, 1) * 100)
 
-    return float(np.clip(stability, 0, 1) * 100)
+    return score
 
 
 # ----------------------------
@@ -138,7 +140,10 @@ def consistency_score(grading_runs):
         for g in run
     ]) + 1e-6
 
-    return float(np.clip(1 - mean_std / overall_std, 0, 1) * 100)
+    stability = 1 - (mean_std / overall_std)
+    score = float(np.clip(stability, 0, 1) * 100)
+
+    return score
 
 
 # ----------------------------

@@ -2,7 +2,7 @@
 import asyncio
 from app.evaluation.metrics import consistency_score, cross_model_consistency
 from app.evaluation.utils import extract_scores
-from app.grading.aggregation import aggregate, summarize_runs
+from app.grading.aggregation import aggregate, aggregate_multi, summarize_runs
 from app.grading.simulation import build_rater_runs, simulate_all
 from app.generation.synthetic import generate_synthetic_answers
 from app.evaluation.failure_detection import detect_rubric_failures
@@ -56,6 +56,13 @@ EVALUATION:
 FAILURES DETECTED:
 {evaluation["failures"]}
 
+WARNINGS:
+{evaluation["warnings"]}
+
+INSIGHTS:
+{evaluation["insights"]}
+
+
 --- TASK ---
 
 Improve the rubric by:
@@ -67,6 +74,27 @@ Goals:
 1. Ambiguity → All the graders reach the same interpretation independently.
 2. Applicability → No valid answer type is left unaddressed by the rubric.
 3. Discrimination → High-quality answers score significantly better than weak ones.
+
+INTERPRETATION GUIDELINES:
+
+- If ambiguity is high but cross-model consistency is low:
+  → criteria wording is ambiguous, not precise enough
+
+- If applicability is low:
+  → rubric is missing rules for borderline answers
+
+- If discrimination is high but top scores have low variance:
+  → rubric lacks granularity at high performance levels
+
+- If edge cases show inconsistent scores:
+  → scoring boundaries are not clearly defined
+
+Use these signals to:
+- rewrite vague criteria into measurable rules
+- define clear scoring boundaries
+- add examples for borderline cases
+
+Use these signals to identify concrete weaknesses in rubric design.
 
 OUTPUT STRICT JSON:
 {{
@@ -101,7 +129,8 @@ def run_pipeline(rubric, teaching, students):
     all_raters = build_rater_runs(grading_runs_multi)
 
     # 6. AGGREGATION
-    aggregated = aggregate(openai_runs)
+    #aggregated = aggregate(openai_runs)
+    aggregated = aggregate_multi(grading_runs_multi)
     aggregated_summary = summarize_runs(aggregated)
 
     # 7. CONSISTENCY
@@ -118,10 +147,11 @@ def run_pipeline(rubric, teaching, students):
 
     # 10. EVALUATION
     evaluation = detect_rubric_failures(
-        openai_runs,
+        all_raters, #openai_runs,
         good_scores,
         edge_scores,
-        bad_scores
+        bad_scores, 
+        cross_model_score
     )
 
     # 11. PROMPT
