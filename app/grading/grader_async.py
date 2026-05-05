@@ -10,26 +10,46 @@ openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 claude_client = AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
 
 
-def build_prompt(rubric, answer):
+def build_prompt(rubric, answer, rag):
+    #context = rag.retrieve(answer)
+
+    contexts = rag.retrieve_per_criterion(rubric)
+
+    context_block = "\n\n".join([
+        f"{c['criterion']}:\n{c['context']}"
+        for c in contexts
+    ])
+
+
     return f"""
 Strict grader.
 
 RUBRIC:
 {rubric}
 
+CRITERION-SPECIFIC CONTEXT:
+{context_block}
+
+
 ANSWER:
 {answer}
 
-Return STRICT JSON:
+Rules:
+- Use rubric to grade
+- Use teaching context as reference for correctness
+- Do NOT invent criteria
+- Do NOT use outside knowledge
+- Final grade MUST be the sum of criterion scores
+- Do NOT exceed max scores
 
+Return STRICT JSON:
 {{
   "criteria_scores": [
     {{
       "criterion": "string",
       "max_score": number,
       "score": number,
-      "reason": "string",
-      "is_ambiguous": true
+      "reason": "string"
     }}
   ],
   "final_grade": number,
@@ -38,8 +58,43 @@ Return STRICT JSON:
 """
 
 
-async def grade_answer_openai_async(rubric, answer):
-    prompt = build_prompt(rubric, answer)
+#     return f"""
+# Strict grader.
+
+# RUBRIC:
+# {rubric}
+
+# RELEVANT TEACHING CONTEXT:
+# {context}
+
+# ANSWER:
+# {answer}
+
+# Rules:
+# - Use rubric strictly
+# - Use context to verify correctness
+# - Do NOT hallucinate missing concepts
+
+# Return STRICT JSON:
+
+# {{
+#   "criteria_scores": [
+#     {{
+#       "criterion": "string",
+#       "max_score": number,
+#       "score": number,
+#       "reason": "string",
+#       "is_ambiguous": true
+#     }}
+#   ],
+#   "final_grade": number,
+#   "overall_reason": "string"
+# }}
+# """
+
+
+async def grade_answer_openai_async(rubric, answer, rag):
+    prompt = build_prompt(rubric, answer, rag)
 
     res = await openai_client.responses.create(
         model="gpt-4.1",
@@ -58,8 +113,8 @@ async def grade_answer_openai_async(rubric, answer):
         }
 
 
-async def grade_answer_claude_async(rubric, answer):
-    prompt = build_prompt(rubric, answer)
+async def grade_answer_claude_async(rubric, answer, rag):
+    prompt = build_prompt(rubric, answer, rag)
 
     res = await claude_client.messages.create(
         model="claude-haiku-4-5-20251001",
@@ -79,10 +134,10 @@ async def grade_answer_claude_async(rubric, answer):
         }
 
 
-async def grade_student(rubric, answer):
+async def grade_student(rubric, answer, rag):
     o, c = await asyncio.gather(
-        grade_answer_openai_async(rubric, answer),
-        grade_answer_claude_async(rubric, answer)
+        grade_answer_openai_async(rubric, answer, rag),
+        grade_answer_claude_async(rubric, answer, rag)
     )
 
     return {"openai": o, "claude": c}

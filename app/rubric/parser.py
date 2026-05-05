@@ -1,85 +1,97 @@
-import re
+from app.config import MODEL_ANALYSIS
+from app.llm.client import call_llm
+from app.utils.json_utils import extract_json
 
-def parse_rubric(rubric_text):
 
-    # split sections
-    case_section = re.search(
-        r"Case study.*?Grading rubric.*?(?=Penalizations:|$)",
-        rubric_text,
-        re.DOTALL
-    )
+def parse_rubric(rubric_text: str, rubric_analysis: dict = None):
+    """
+    LLM-based rubric parser that extracts implicit grading criteria.
 
-    penalty_section = re.search(
-        r"Penalizations:(.*)",
-        rubric_text,
-        re.DOTALL
-    )
+    Handles rubrics that do NOT explicitly list criteria.
+    """
 
-    # -----------------------
-    # TASK + SCENARIO
-    # -----------------------
-    task_block = case_section.group(0) if case_section else rubric_text
+    analysis_block = ""
+    if rubric_analysis:
+        analysis_block = f"""
+RUBRIC ANALYSIS (for context only — DO NOT convert into criteria):
+{rubric_analysis}
+"""
 
-    instructions = []
-    scenario_lines = []
+    prompt = f"""
+You are an expert in exam rubric design.
 
-    for line in task_block.split("\n"):
-        l = line.strip()
+Your task is to extract the TRUE grading criteria from the rubric.
 
-        if not l:
-            continue
+IMPORTANT:
+- The rubric may NOT explicitly list criteria
+- You must INFER them from scoring rules
+- DO NOT use meta concepts like "ambiguity", "applicability", "discrimination"
+- Extract ONLY grading-relevant dimensions
 
-        if "choose" in l.lower() or "apply" in l.lower():
-            instructions.append(l)
-        elif "scenario" in l.lower() or "smartcity" in l.lower():
-            scenario_lines.append(l)
+WHAT IS A CRITERION:
+A criterion is an independent dimension used to assign points.
 
-    # -----------------------
-    # SCORING RULES
-    # -----------------------
-    per_action_rules = [
-        {
-            "name": "category_match",
-            "weight": 0.5,
-            "rule": "action corresponds to category"
-        },
-        {
-            "name": "harm_description",
-            "weight": 0.5,
-            "rule": "clear harmful impact + specificity to SmartCity"
-        }
-    ]
+---
 
-    # -----------------------
-    # PENALTIES
-    # -----------------------
-    penalties = []
+EXAMPLE:
 
-    if penalty_section:
-        for line in penalty_section.group(1).split("\n"):
-            l = line.strip()
-            if "-0.5" in l:
-                penalties.append({
-                    "name": "similar_actions",
-                    "value": -0.5,
-                    "rule": l
-                })
-            elif "-0.25" in l:
-                penalties.append({
-                    "name": "weak_impact",
-                    "value": -0.25,
-                    "rule": l
-                })
+Rubric:
+"1 point for correct category, 1 point for clear explanation"
 
-    return {
-        "task": {
-            "name": "Case study",
-            "total_points": 3,
-            "instructions": instructions,
-            "scenario": "\n".join(scenario_lines)
-        },
-        "scoring": {
-            "per_action": per_action_rules,
-            "penalties": penalties
-        }
-    }
+Output:
+[
+  "category correctness",
+  "explanation quality"
+]
+
+---
+
+TASK:
+
+Extract:
+
+1. Task instructions
+2. Scenario/context
+3. Grading criteria (inferred)
+4. Penalties (if any)
+
+Each criterion must:
+- be independent
+- be usable for grading
+- correspond to how points are assigned
+
+---
+
+Return STRICT JSON:
+
+{{
+  "task": {{
+    "instructions": ["..."],
+    "scenario": "..."
+  }},
+  "criteria": [
+    {{
+      "name": "short label",
+      "description": "what is being evaluated",
+      "max_score": number
+    }}
+  ],
+  "penalties": [
+    {{
+      "description": "...",
+      "value": number
+    }}
+  ]
+}}
+
+---
+
+RUBRIC:
+{rubric_text}
+
+{analysis_block}
+"""
+
+    output = call_llm(prompt, model=MODEL_ANALYSIS, temperature=0.0)
+
+    return extract_json(output)

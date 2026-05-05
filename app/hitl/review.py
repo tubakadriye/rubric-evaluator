@@ -15,11 +15,11 @@ def human_review(result):
         return result
 
     print("\nEdit rubric:")
-    result["improved_rubric"] = input("> ")
+    result["improved_rubric"] = input(">")
 
     print("\nEdit explanation JSON:")
     try:
-        result["explanation"] = json.loads(input("> "))
+        result["explanation"] = json.loads(input(">"))
     except:
         pass
 

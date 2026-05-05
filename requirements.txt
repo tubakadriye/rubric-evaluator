@@ -8,3 +8,9 @@ pymupdf
 Pillow
 tqdm
 python-dotenv
+langchain
+langchain-community
+langchain-core
+langchain-openai
+langchain-text-splitters
+faiss-cpu

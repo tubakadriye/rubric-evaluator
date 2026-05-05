@@ -45,6 +45,11 @@ def ambiguity_score_icc(grading_runs):
 
     row = icc[icc["Type"].isin(["ICC(A,1)", "ICC(A,k)"])]
 
+    row = icc[icc["Type"] == "ICC(A,1)"]
+
+    if row.empty:
+        row = icc[icc["Type"] == "ICC(A,k)"]
+
     if row.empty:
         return 0.0
 
@@ -164,7 +169,8 @@ def cross_model_consistency(results):
     if not diffs:
         return 100.0
 
-    max_diff = max(diffs) + 1e-6
     mean_diff = np.mean(diffs)
+    std_diff = np.std(diffs)
 
-    return float(np.clip(1 - mean_diff / max_diff, 0, 1) * 100)
+    score = 1 - (mean_diff / (mean_diff + std_diff + 1e-6))
+    return float(np.clip(score, 0, 1) * 100)

@@ -5,6 +5,8 @@ from app.pipeline import run_pipeline
 import json
 import argparse
 
+from app.rag.rag_service import RAGService
+
 
 def main():
 
@@ -17,10 +19,12 @@ def main():
     args = parser.parse_args()
 
     rubric = extract_rubric(args.rubric)
-    teaching = extract_teaching_material(args.teaching)
+    teaching_json = extract_teaching_material(args.teaching)
     students = extract_student_transcription(args.students)
 
-    result = run_pipeline(rubric, teaching, students)
+    rag = RAGService(teaching_json)
+
+    result = run_pipeline(rubric, teaching_json, students, rag)
 
     print(json.dumps(result, indent = 2))
     

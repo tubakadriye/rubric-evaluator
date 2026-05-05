@@ -6,10 +6,12 @@ from app.grading.aggregation import aggregate, aggregate_multi, summarize_runs
 from app.grading.simulation import build_rater_runs, simulate_all
 from app.generation.synthetic import generate_synthetic_answers
 from app.evaluation.failure_detection import detect_rubric_failures
+from app.rag.rag_service import RAGService
 from app.rubric.parser import parse_rubric
 from app.rubric.analysis import analyze_rubric
 from app.generation.improvement import improve_rubric
 from app.hitl.review import human_review
+
 
 
 def build_prompt(rubric, rubric_structured, teaching, students, aggregated_summary, consistency, cross_model_score, evaluation, rubric_analysis):
@@ -108,7 +110,7 @@ OUTPUT STRICT JSON:
 """
 
 
-def run_pipeline(rubric, teaching, students):
+def run_pipeline(rubric, teaching, students, rag):
 
     # 1. STRUCTURE
     rubric_structured = parse_rubric(rubric)
@@ -121,10 +123,10 @@ def run_pipeline(rubric, teaching, students):
 
     # 4. RUN ALL SIMULATIONS (ASYNC)
     grading_runs_multi, good_runs_multi, bad_runs_multi, edge_runs_multi = asyncio.run(
-        simulate_all(rubric, students, synthetic)
+        simulate_all(rubric, rubric_structured, students, synthetic, rag)
     )
 
-    # 5. 
+    # 5. FORMAT
     openai_runs = [[r["openai"] for r in run] for run in grading_runs_multi]
     all_raters = build_rater_runs(grading_runs_multi)
 
@@ -154,7 +156,7 @@ def run_pipeline(rubric, teaching, students):
         cross_model_score
     )
 
-    # 11. PROMPT
+    # 11. IMPROVEMENT PROMPT
     prompt = build_prompt(
         rubric,
         rubric_structured,
