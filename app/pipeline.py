@@ -14,11 +14,27 @@ from app.hitl.review import human_review
 
 
 
-def build_prompt(rubric, rubric_structured, teaching, students, aggregated_summary, consistency, cross_model_score, evaluation, rubric_analysis):
+def build_prompt(rubric, rubric_structured, teaching, students, aggregated_summary, consistency, cross_model_score, evaluation, rubric_analysis, rag= None):
 
     student_block = "\n\n".join(
         [f"Student {i+1}:\n{s}" for i, s in enumerate(students)]
     )
+
+    if rag is not None:
+        try:
+            contexts = rag.retrieve_per_criterion(rubric_structured)
+
+            teaching_block = "\n\n".join([
+                f"{c['criterion']}:\n{c['context']}"
+                for c in contexts
+            ])
+
+        except Exception:
+            # fallback if something breaks
+            teaching_block = teaching[:3000]
+    else:
+        # fallback if no rag passed
+        teaching_block = teaching[:3000]
 
     return f"""
 You are an expert exam designer.
@@ -37,8 +53,8 @@ STRUCTURED RUBRIC
 RUBRIC ANALYSIS:
 {rubric_analysis}
 
-TEACHING MATERIAL:
-{teaching}
+TEACHING CONTEXT (RETRIEVED):
+{teaching_block}
 
 STUDENT ANSWERS:
 {student_block}
@@ -95,6 +111,12 @@ Use these signals to:
 - rewrite vague criteria into measurable rules
 - define clear scoring boundaries
 - add examples for borderline cases
+
+Rules:
+- Use rubric as primary source of truth
+- Use teaching context only to verify correctness
+- Do NOT invent new criteria unrelated to rubric
+- If context is insufficient → rely ONLY on rubric
 
 Use these signals to identify concrete weaknesses in rubric design.
 
@@ -166,7 +188,8 @@ def run_pipeline(rubric, teaching, students, rag):
         consistency,
         cross_model_score,
         evaluation,
-        rubric_analysis
+        rubric_analysis, 
+        rag
     )
 
     improved = improve_rubric(prompt)
